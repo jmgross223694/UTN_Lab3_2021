@@ -1,0 +1,40 @@
+use BluePrint
+GO
+/*
+INSERT INTO TipoClientes(Tipo) VALUES('Estatal')
+INSERT INTO TipoClientes(Tipo) VALUES('Multinacional')
+INSERT INTO TipoClientes(Tipo) VALUES('Educativo privado')
+INSERT INTO TipoClientes(Tipo) VALUES('Educativo público')
+INSERT INTO TipoClientes(Tipo) VALUES('Sin fines de lucro')
+GO
+*/
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Brian Lara', 7, '11-111111-1', 'hola@brianlara.com.ar', '45656643', '1128473829')
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Legna Nomis', 7, '44-44444-4', 'hola@legnanomis.com.ar', NULL, NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Kloster Inc', 8, '99', NULL, '(49) 08363362115', NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('UTN',8, '22-222222-2', 'info@utn.edu.ar', '11456567', NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('World Animal Protection', 9, '98', 'wap@wap.org', '44233423', NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Clifton Goldney Inc', 9, '33-333333-3', 'clifton@goldney.com.ar', NULL, NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Strebern Ich', 10, '55-555555-5', NULL, NULL, NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Vaca SA', 10, '66-666666-6', 'info@alancow.com.ar', NULL, '1147483934')
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Hugo Gomez', 11, '77-777777-7', 'hola@hugo.com.ar', NULL, NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Adducci', 11, '88-888888-8', 'adducci@gmail.com', '114838992', '1148383438')
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('Estudio Contable Arevalo y Cia', 8, '99-999999-9', 'arevalo@yahoo.com.ar', '114838385', NULL)
+INSERT INTO Clientes(RazonSocial, IDTipoCliente, cuit, Mail, TelefonoFijo, Celular) VALUES('White SA', 8, '11-0000000-1', 'nazarenwhite@hotmail.com', NULL, NULL)
+GO
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('A100', 'Scholar', 'Aplicación que permitirá gestionar tu establecimiento educativo', 400000, '2020-5-14', NULL, 1, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('B125', 'Mailer', 'Servicio de envío de mail masivo.', 125000, '2019-7-21', NULL, 2, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('CC45', 'Sales manager', 'Gestor de ventas.', 800000, '2019-12-8', NULL, 1, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('CC46', 'Seals manager', 'Gestor de focas.', 950000, '2020-3-13', NULL, 5, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('A120', 'Monkey Doctor', 'Juego muy popular de preguntas y respuestas', 1000000, '2014-11-4', '2015-12-10', 1, 0)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('A113', 'Goto Game Jam Winner Randomizer', NULL, 50000, '2020-12-12', '2020-12-20', 1, 0)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('B99', 'UTN Bot', 'Un corrector de exámenes para LAB1, LAB2 y LAB3', 450000, '2020-3-11', NULL, 2, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('B100', 'PetApp', 'Aplicación que permite encontrar adoptantes a mascotas abandonadas', 100000, '2018-10-10', '2019-4-15', 5, 0)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('D134', 'GetApp', 'Aplicación móvil tipo Alarma que te despierta o llama a la policía', 400000, '2021-5-25', NULL, 1, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('E1444', 'Wine', 'Emulador de aplicaciones de Windows en Linux', 5450000, '2005-5-8', NULL, 10, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('F45', 'PlagiApp', 'Aplicación que compara exámenes y te sugiere cuales sospechosamente parecidos.', 675000, '2018-5-14', NULL, 2, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('Z111', 'Zoomba', 'Clases de baile online', 450000, '2021-9-30', NULL, 8, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('C40', 'Faker', 'Aplicación para inventar datos en las bases de datos', 50000, '2000-12-31', '2001-2-5', 2, 0)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('A33', 'Moodler', 'Gestor de Campus Virtual Moodle', 120500, '2000-3-15', '2000-3-30', 4, 0)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('D33', 'Gentesss', NULL, 140000, '2021-6-27', NULL, 3, 1)
+INSERT INTO Proyectos(ID, Nombre, Descripcion, CostoEstimado, FechaInicio, FechaFin, IDCliente, Estado) VALUES('F23', 'ColourAdvisor', 'Aplicación que recomienda paletas de colores para tu programa', 78000, '2020-6-13', '2020-6-25', 9, 0)
+GO
