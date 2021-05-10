@@ -258,7 +258,7 @@ fecha estimada. Indicar el nombre del proyecto y la cantidad calculada.
 select distinct P.Nombre as Proyecto,  count(M.Id) as 'Cantidad de modulos'
 from Proyectos as P
 inner join Modulos as M on P.ID = M.IDProyecto
-WHERE M.FechaEstimadaFin < M.FechaFin OR M.FechaEstimadaFin > M.FechaFin
+WHERE M.FechaEstimadaFin <> M.FechaFin
 Group by P.Nombre
 Order by [Cantidad de modulos] Desc
 GO
