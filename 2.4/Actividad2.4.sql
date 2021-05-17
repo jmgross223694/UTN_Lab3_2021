@@ -118,13 +118,31 @@ adelantada y cantidad de módulos con estimación demorada.
 Adelantada →  estimación de fin haya sido inferior a la real.
 Demorada   →  estimación de fin haya sido superior a la real.
 */
-
+select P.Nombre as Proyecto, P.CostoEstimado as costoproyecto, 
+(select count(M.ID) from Modulos as M WHERE M.FechaEstimadaFin = M.FechaFin AND P.ID = M.IDProyecto) as Exactos,
+(select count(M.ID) from Modulos as M WHERE M.FechaEstimadaFin < M.FechaFin AND P.ID = M.IDProyecto)as Adelantados,
+(select count(M.ID) from Modulos as M WHERE M.FechaEstimadaFin > M.FechaFin AND P.ID = M.IDProyecto)as Demorados
+from Proyectos as P
+inner join Modulos as MO on P.ID = MO.IDProyecto
+GO
 /*
 11
 Listado con nombre del tipo de tarea y total abonado en concepto de honorarios 
 para colaboradores internos y total abonado en concepto de honorarios para colaboradores externos.
 */
-
+select distinct TT.Nombre as TipoTarea, 
+(select sum(C2.Tiempo*C2.PrecioHora) from Colaboradores as C1
+inner join Colaboraciones as C2 on C1.ID = C2.IDColaborador
+inner join Tareas as T on C2.IDTarea = T.ID
+WHERE TT.ID = T.IDTipo AND C1.Tipo = 'I') 
+as HonInternos,
+(select sum(C2.Tiempo*C2.PrecioHora) from Colaboradores as C1 
+inner join Colaboraciones as C2 on C1.ID = C2.IDColaborador
+inner join Tareas as T on C2.IDTarea = T.ID
+WHERE TT.ID = T.IDTipo AND C1.Tipo = 'E') 
+as HonExternos
+from TiposTarea as TT
+GO
 /*
 12
 Listado con nombre del proyecto, razón social del cliente y saldo final del proyecto. 
@@ -132,14 +150,60 @@ El saldo final surge de la siguiente fórmula:
 Costo estimado - Σ(HCE) - Σ(HCI) * 0.1
 Siendo HCE → Honorarios de colaboradores externos y HCI → Honorarios de colaboradores internos.
 */
-
+select P.Nombre as Proyecto, CL.RazonSocial,
+(P.CostoEstimado - 
+    (    --IMPORTANTE: CUANDO OPERE ARITMETICAMENTE, AGREGAR FUNCION IS NULL
+        select isnull(sum(CO.PrecioHora * CO.Tiempo),0) from Colaboradores as C
+        inner join Colaboraciones as CO on CO.IDColaborador = C.ID
+        inner join Tareas as T on T.ID = CO.IDTarea
+        inner join Modulos as M on M.ID = T.IDModulo
+        where M.IDProyecto = P.ID and C.Tipo = 'E'
+    ) - 
+    (
+        select isnull(sum(CO.PrecioHora * CO.Tiempo),0) from Colaboradores as C
+        inner join Colaboraciones as CO on CO.IDColaborador = C.ID
+        inner join Tareas as T on T.ID = CO.IDTarea
+        inner join Modulos as M on M.ID = T.IDModulo
+        where M.IDProyecto = P.ID and C.Tipo = 'I'
+    ) * 0.1)as 'Saldo Final'
+from Proyectos as P
+    inner join Clientes as CL on CL.ID = P.IDCliente
+GO
 /*
 13
 Para cada módulo listar el nombre del proyecto, el nombre del módulo, el total en 
 tiempo que demoraron las tareas de ese módulo y qué porcentaje de tiempo representaron 
 las tareas de ese módulo en relación al tiempo total de tareas del proyecto.
 */
+select M.Nombre as Modulo, P.Nombre as Proyecto, 
+(select isnull(sum(C2.Tiempo),0)
+from Colaboraciones as C2
+inner join Tareas as T on C2.IDTarea = T.ID
+inner join Modulos as M2 on T.IDModulo = M2.ID
+WHERE T.IDModulo = M.ID AND M2.IDProyecto = P.ID
+) as TotalTiempoModulos,
+(
+	(
+		(select isnull(sum(C2.Tiempo),0)
+		from Colaboraciones as C2
+		inner join Tareas as T on C2.IDTarea = T.ID
+		inner join Modulos as M2 on T.IDModulo = M2.ID
+		WHERE T.IDModulo = M.ID AND M2.IDProyecto = P.ID
+		) *1.0 /
 
+		(select isnull(sum(C2.Tiempo),1)
+		from Colaboraciones as C2
+		inner join Tareas as T on C2.IDTarea = T.ID
+		inner join Modulos as M2 on T.IDModulo = M2.ID
+		inner join Proyectos as P2 on M2.IDProyecto = P2.ID
+		WHERE M2.IDProyecto = P.ID
+		) *1.0 
+	) *100
+)		
+as '% de tiempo total de proyectos'
+from Proyectos as P
+inner join Modulos as M on P.ID = M.IDProyecto
+GO
 /*
 14
 Por cada colaborador indicar el apellido, el nombre, 'Interno' o 'Externo' según su tipo 
