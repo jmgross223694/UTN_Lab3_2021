@@ -1,3 +1,5 @@
+-- Modelo 1:
+
 /*
 1) Hacer un trigger que al cargar un crédito verifique que el 
 importe del mismo sumado a los importes de los créditos que actualmente 
@@ -27,7 +29,7 @@ begin
 	
 	set @importeTotal = @importeCreditoNuevo + @importesCreditosVigentes
 	
-	select @ganancias = P.DeclaracionGanancias from Personas P where DNI = @DNI
+	select @ganancias = P.DeclaracionGanancias from Personas P where P.DNI = @DNI
 	
 	set @ganancias = @ganancias*3
 
@@ -100,9 +102,9 @@ begin
 	declare @promedioGanancias money
 	declare @DNI bigint
 	select @DNI = DNI from inserted
-	select @promedioGanancias = (select isnull(avg(P.DeclaracionGanancias), 0) from Personas P)
+	set @promedioGanancias = (select isnull(avg(P.DeclaracionGanancias), 0) from Personas P)
 	declare @gananciaPersona money
-	select @gananciaPersona = (select P.DeclaracionGanancias from Personas P where P.DNI = @DNI)
+	set @gananciaPersona = (select P.DeclaracionGanancias from Personas P where P.DNI = @DNI)
 
 	if @Plazo >= 20 
 	begin
@@ -153,3 +155,113 @@ end
 GO
 
 exec mostrar_prestamos_por_rango_de_fechas '2020-12-12', '2021-01-12'
+
+
+--_____________________________________________________________________________________________________________
+
+-- Modelo 2:
+
+/*
+A) - Realizar un trigger que se encargue de verificar que un socio 
+no pueda extraer más de un libro a la vez. Se sabrá que un socio 
+tiene un libro sin devolver si contiene un registro en la tabla de 
+Préstamos que no tiene fecha de devolución. Si el socio tiene un 
+libro sin devolver el trigger no deberá permitir el préstamo y 
+deberá indicarlo con un mensaje aclaratorio. Caso contrario, 
+registrar el préstamo.  (25 puntos)
+*/
+
+--contar cantidad de prestamos para x persona sin fecha de devolucion
+
+create trigger tr_verificar_prestamos_pendientes on Prestamos
+instead of insert
+as begin
+
+	declare @IDSocio bigint
+	select @IDSocio = IDSocio from inserted
+	declare @CantDevPend int
+	set @CantDevPend = 0
+	if (select count(*) from Prestamos as P where P.IDSocio = @IDSocio and P.FDevolucion is null) > 0
+	begin
+		set @CantDevPend = (select count(*) from Prestamos as P
+		where P.IDSocio = @IDSocio and P.FDevolucion is null)
+	end
+	
+	if @CantDevPend > 0 
+	begin
+		raiserror('No se puede otorgar el préstamo', 16, 1)
+	end
+end
+
+/*
+B) Realizar un procedimiento almacenado que a partir de un número 
+de socio se pueda ver, ordenado por fecha decreciente, todos los 
+libros retirados por el socio y que hayan sido devueltos. (20 puntos)
+*/
+
+create procedure sp_ver_prestamos_concluidos(
+	@NumSocio bigint
+)
+as
+begin
+	select L.ID, L.Titulo, L.Precio, L.Bestseller from Libros as L
+	inner join Prestamos as P on L.ID = P.ID
+	inner join Socios as S on P.ID = S.ID
+	where @NumSocio = P.IDSocio and P.FDevolucion is not null
+	order by FPrestamo desc
+end
+
+/*
+C) Hacer un procedimiento almacenado denominado 'Devolver_Libro' 
+que a partir de un IDLibro y una Fecha de devolución, realice la 
+devolución de dicho libro en esa fecha y asigne el costo del 
+préstamo que equivale al 10% del valor del libro. Si el libro es 
+devuelto después de siete días o más de la fecha de préstamo, el 
+costo del préstamo será del 20% del valor del libro.
+NOTA: Si el libro no se encuentra prestado indicarlo con un 
+mensaje. (30 puntos)
+*/
+
+create procedure sp_Devolver_Libro(
+	@IDLibro bigint,
+	@FechaDevolucion date
+)
+as
+begin
+	declare @Devoluciones int
+	set @Devoluciones = (select count(*) from Prestamos as P
+	where P.IDLibro = @IDLibro and P.FDevolucion is null)
+	if @Devoluciones = 0
+	begin
+		raiserror ('EL LIBRO NO SE ENCUENTRA PRESTADO!')
+	end
+	declare @DiferenciaFechas int
+	set @DiferenciaFechas = @FechaDevolucion - P.FPrestamo
+	if @Devoluciones > 0 and @DiferenciaFechas >= 7
+	begin
+		declare @NuevoCosto money
+		select @NuevoCosto = L.Precio*0.2 from Libros as L where L.ID = P.ID
+		insert into Prestamos(IDSocio, IDLibro, FPrestamo, FDevolucion, Costo)
+		values(P.IDSocio, @IDLibro, P.FPrestamo, @FechaDevolucion, @NuevoCosto)
+	end
+	else
+	begin
+		declare @NuevoCosto2 money
+		select @NuevoCosto = L.Precio*0.1 from Libros as L where L.ID = P.ID
+		insert into Prestamos(IDSocio, IDLibro, FPrestamo, FDevolucion, Costo)
+		values(P.IDSocio, @IDLibro, P.FPrestamo, @FechaDevolucion, @NuevoCosto2)
+	end
+end
+
+exec sp_Devolver_Libro IDLibro, FechaDevolucion
+
+/*
+D) Listar todos los socios que hayan retirado al menos un bestseller. 
+Los datos del socio deben aparecer una sola vez en el listado. (25 puntos)
+*/
+
+select distinct * from Socios as S
+inner join Prestamos as P on S.ID = P.ID
+inner join Libros as L on P.ID = L.ID
+where L.Bestseller = 1
+GO
