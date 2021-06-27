@@ -236,6 +236,26 @@ select * from Modulos where ID = 1
 ha dado de baja lógica realice la baja física de la misma.
 */
 
+create trigger TR_BAJA_FISICA_TAREA on Tareas
+instead of delete
+as
+begin
+	declare @IDTarea int = (select ID from deleted)
+	declare @Estado bit = (select T.Estado from Tareas T where T.ID = @IDTarea)
+	if @Estado = 0
+	begin
+		delete Tareas where ID = @IDTarea
+	end
+	else
+		update Tareas set Estado = 0 where ID = @IDTarea
+end
+
+/*
+delete Tareas where ID = 257
+update Tareas set Estado = 1 where ID = 257
+select * from Tareas where ID = 257
+*/
+
 /*
 9) Hacer un trigger que al ingresar una colaboración no permita 
 que el colaborador/a superponga las fechas con las de otras 
@@ -244,10 +264,60 @@ contrario, registrar la colaboración sino generar un error con
 un mensaje aclaratorio.
 */
 
+create trigger TR_NO_SUPERPONER_COLABORACION on Colaboraciones
+instead of insert
+as
+begin
+	declare @IDTarea int = (select IDTarea from inserted)
+	declare @FechaInicioNuevaColaboracion date = (select T.FechaInicio from Tareas T where @IDTarea = T.ID)
+	declare @FechaFinNuevaColaboracion date = (select T.FechaFin from Tareas T where @IDTarea = T.ID)
+	
+	--Comparar fechas nuevas con fechas existentes por medio de una sub-consulta
+
+end
+
 /*
 10) Hacer un trigger que al modificar el precio hora base de un 
 tipo de tarea registre en una tabla llamada HistorialPreciosTiposTarea 
 el ID, el precio antes de modificarse y la fecha de modificación.
-
 NOTA: La tabla debe estar creada previamente. NO crearla dentro del trigger.
+*/
+
+create table HistorialPreciosTiposTarea(
+	ID int primary key not null,
+	PrecioPrevio money null,
+	FechaModificado date null
+)
+
+create trigger TR_MODIFICAR_PRECIOHORA_TIPOSTAREA on TiposTarea
+instead of update
+as
+begin
+	declare @IDTipoTarea smallint = (select ID from inserted)
+	declare @PrecioTipoTareaAnterior money = (select PrecioHoraBase from deleted)
+	declare @PrecioTipoTareaNuevo money = (select PrecioHoraBase from inserted)
+
+	if @PrecioTipoTareaNuevo <> @PrecioTipoTareaAnterior
+	begin
+		declare @FechaModificado date = getdate()
+		
+		declare @Bandera bit = (select count(*) from HistorialPreciosTiposTarea where @IDTipoTarea = ID)
+		
+		if @Bandera = 0
+		begin
+			insert into HistorialPreciosTiposTarea(ID, PrecioPrevio, FechaModificado)
+					values(@IDTipoTarea, @PrecioTipoTareaAnterior, @FechaModificado)
+		end
+		if @Bandera = 1
+		begin
+			update HistorialPreciosTiposTarea set PrecioPrevio = @PrecioTipoTareaAnterior, FechaModificado = @FechaModificado where ID = @IDTipoTarea
+		end
+
+		update TiposTarea set PrecioHoraBase = (select PrecioHoraBase from inserted) where ID = @IDTipoTarea
+	end
+end
+
+/*
+update TiposTarea set PrecioHoraBase = 4000 where ID = 2
+select * from TiposTarea where ID = 2
 */
