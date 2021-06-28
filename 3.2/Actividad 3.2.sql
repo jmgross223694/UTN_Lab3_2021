@@ -264,16 +264,34 @@ contrario, registrar la colaboración sino generar un error con
 un mensaje aclaratorio.
 */
 
-create trigger TR_NO_SUPERPONER_COLABORACION on Colaboraciones
-instead of insert
+Create Trigger TR_NO_SUPERPONER_COLABORACION on Colaboraciones
+after insert
 as
 begin
-	declare @IDTarea int = (select IDTarea from inserted)
-	declare @FechaInicioNuevaColaboracion date = (select T.FechaInicio from Tareas T where @IDTarea = T.ID)
-	declare @FechaFinNuevaColaboracion date = (select T.FechaFin from Tareas T where @IDTarea = T.ID)
-	
-	--Comparar fechas nuevas con fechas existentes por medio de una sub-consulta
+        Declare @IDColab bigint
+        Declare @IDTarea bigint
+        Declare @Inicio date
+        Declare @Fin date
+        Declare @Cantidad smallint
 
+        select @IDColab = IDColaborador, @IDTarea = IDTarea from inserted
+        select @Inicio = FechaInicio, @Fin = FechaFin from Tareas where ID = @IDTarea
+
+        -- Obtener datos necesarios de inserted
+        Select @Cantidad = count(*) From Colaboraciones C
+        inner join Tareas T on T.ID = C.IDTarea
+        where C.IDColaborador = @IDColab and
+        (
+            @Inicio Between FechaInicio And FechaFin or 
+            @Fin Between FechaInicio and FechaFin or
+            @Inicio < FechaInicio And @Fin > FechaFin
+        ) 
+        
+        if @Cantidad > 1
+		begin
+            rollback transaction
+            raiserror('La tarea ingresada en la colaboración, se superpone con otras', 16, 1)
+        end
 end
 
 /*
