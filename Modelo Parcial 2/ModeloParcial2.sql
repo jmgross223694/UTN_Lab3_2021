@@ -177,20 +177,20 @@ create trigger tr_verificar_prestamos_pendientes on Prestamos
 instead of insert
 as begin
 
-	declare @IDSocio bigint
-	select @IDSocio = IDSocio from inserted
-	declare @CantDevPend int
-	set @CantDevPend = 0
-	if (select count(*) from Prestamos as P where P.IDSocio = @IDSocio and P.FDevolucion is null) > 0
-	begin
-		set @CantDevPend = (select count(*) from Prestamos as P
-		where P.IDSocio = @IDSocio and P.FDevolucion is null)
-	end
-	
-	if @CantDevPend > 0 
-	begin
-		raiserror('No se puede otorgar el préstamo', 16, 1)
-	end
+    declare @IDSocio bigint
+    select @IDSocio = IDSocio from inserted
+    declare @CantDevPend int
+    set @CantDevPend = (select count(*) from Prestamos as P where P.IDSocio = @IDSocio and P.FDevolucion is null)
+    if @CantDevPend = 0
+    begin        
+		insert into Prestamos (IDSocio, IDLibro, FPrestamo, FDevolucion, Costo)
+		select IDSocio, IDLibro, FPrestamo, FDevolucion, Costo from inserted
+    end
+    
+    if @CantDevPend > 0 
+    begin
+        raiserror('No se puede otorgar el préstamo', 16, 1)
+    end
 end
 
 /*
@@ -199,15 +199,15 @@ de socio se pueda ver, ordenado por fecha decreciente, todos los
 libros retirados por el socio y que hayan sido devueltos. (20 puntos)
 */
 
-create procedure sp_ver_prestamos_concluidos(
-	@NumSocio bigint
+create procedure sp_libros_retirados(
+	@IDSocio bigint
 )
-as
+as 
 begin
-	select L.ID, L.Titulo, L.Precio, L.Bestseller from Libros as L
-	inner join Prestamos as P on L.ID = P.ID
-	inner join Socios as S on P.ID = S.ID
-	where @NumSocio = P.IDSocio and P.FDevolucion is not null
+	select * from Libros L
+	inner join Prestamos P on L.ID = P.IDLibro
+	inner join Socios S on P.IDSocio = S.ID
+	where S.ID = @IDSocio and FDevolucion is not null
 	order by FPrestamo desc
 end
 
@@ -223,33 +223,25 @@ mensaje. (30 puntos)
 */
 
 create procedure sp_Devolver_Libro(
-	@IDLibro bigint,
-	@FechaDevolucion date
+	@IDLibro bigint
 )
 as
 begin
-	declare @Devoluciones int
-	set @Devoluciones = (select count(*) from Prestamos as P
-	where P.IDLibro = @IDLibro and P.FDevolucion is null)
-	if @Devoluciones = 0
+	declare @FDevolucion date = getdate()
+	declare @DiasPrestamo int = (getdate() - (select P.FPrestamo from Prestamos P where @IDLibro = P.IDLibro))
+	if (select count(*) from Prestamos P where P.IDLibro = @IDLibro) = 0
 	begin
-		raiserror ('EL LIBRO NO SE ENCUENTRA PRESTADO!')
+		raiserror ('EL LIBRO NO SE ENCUENTRA PRESTADO!',16,1)
 	end
-	declare @DiferenciaFechas int
-	set @DiferenciaFechas = @FechaDevolucion - P.FPrestamo
-	if @Devoluciones > 0 and @DiferenciaFechas >= 7
+	if @DiasPrestamo >= 7
 	begin
-		declare @NuevoCosto money
-		select @NuevoCosto = L.Precio*0.2 from Libros as L where L.ID = P.ID
-		insert into Prestamos(IDSocio, IDLibro, FPrestamo, FDevolucion, Costo)
-		values(P.IDSocio, @IDLibro, P.FPrestamo, @FechaDevolucion, @NuevoCosto)
+		declare @NuevoCosto money = (select L.Precio*0.2 from Libros L where L.ID = @IDLibro)
+		update Prestamos set P.FDevolucion = @FDevolucion, P.Costo = @NuevoCosto where @IDLibro = P.IDLibro
 	end
 	else
 	begin
-		declare @NuevoCosto2 money
-		select @NuevoCosto = L.Precio*0.1 from Libros as L where L.ID = P.ID
-		insert into Prestamos(IDSocio, IDLibro, FPrestamo, FDevolucion, Costo)
-		values(P.IDSocio, @IDLibro, P.FPrestamo, @FechaDevolucion, @NuevoCosto2)
+		declare @NuevoCosto money = (select L.Precio*0.1 from Libros L where L.ID = @IDLibro)
+		update Prestamos set P.FDevolucion = @FDevolucion, P.Costo = @NuevoCosto where @IDLibro = P.IDLibro
 	end
 end
 
@@ -260,8 +252,8 @@ D) Listar todos los socios que hayan retirado al menos un bestseller.
 Los datos del socio deben aparecer una sola vez en el listado. (25 puntos)
 */
 
-select distinct * from Socios as S
-inner join Prestamos as P on S.ID = P.ID
-inner join Libros as L on P.ID = L.ID
+select distinct * from Socios S
+inner join Prestamos P on S.ID = P.IDSocio
+inner join Libros L on P.IDLibro = L.ID
 where L.Bestseller = 1
 GO
