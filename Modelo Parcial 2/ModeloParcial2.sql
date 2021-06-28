@@ -25,7 +25,8 @@ begin
 	
 	select @importeCreditoNuevo = Importe from inserted
 	
-	set @importesCreditosVigentes = (select isnull(sum(C.Importe), 0) from Creditos C where Cancelado = 0 and C.DNI = @DNI)
+	set @importesCreditosVigentes = (select isnull(sum(C.Importe), 0) from Creditos C 
+	where Cancelado = 0 and C.DNI = @DNI)
 	
 	set @importeTotal = @importeCreditoNuevo + @importesCreditosVigentes
 	
@@ -35,7 +36,8 @@ begin
 
 	--verificar que (importe + creditos vigentes) < (3 * ganancias)
 
-	if @importeTotal >= @ganancias begin
+	if @importeTotal > @ganancias
+		begin
 			raiserror('No se puede otorgar el credito', 16, 1)
 		end
 
@@ -91,7 +93,7 @@ personas cuya declaración de ganancias sea menor al promedio de declaración de g
 use ModeloParcial2
 GO
 
-alter trigger tr_verificar_ganancias on Creditos
+create trigger tr_verificar_ganancias on Creditos
 instead of insert
 as
 begin
@@ -102,24 +104,19 @@ begin
 	declare @promedioGanancias money
 	declare @DNI bigint
 	select @DNI = DNI from inserted
-	set @promedioGanancias = (select isnull(avg(P.DeclaracionGanancias), 0) from Personas P)
+	set @promedioGanancias = (select avg(P.DeclaracionGanancias) from Personas P)
 	declare @gananciaPersona money
 	set @gananciaPersona = (select P.DeclaracionGanancias from Personas P where P.DNI = @DNI)
 
-	if @Plazo >= 20 
+	if @Plazo >= 20 and @gananciaPersona < @promedioGanancias
 	begin
-		if @gananciaPersona < @promedioGanancias
-		begin
-			raiserror('No se puede otorgar el credito', 16, 1)
-		end
+		raiserror('No se puede otorgar el credito', 16, 1)
+	end
 
-		else
-
-		begin
-			insert into Creditos(ID, IDBanco, DNI, Fecha, Importe, Plazo, Cancelado) 
-			select ID, IDBanco, DNI, Fecha, Importe, Plazo, Cancelado from inserted
-			--commit transaction
-		end
+	else
+	begin
+		insert into Creditos(ID, IDBanco, DNI, Fecha, Importe, Plazo, Cancelado) 
+		select ID, IDBanco, DNI, Fecha, Importe, Plazo, Cancelado from inserted
 	end
 end
 GO
@@ -144,12 +141,12 @@ create procedure mostrar_prestamos_por_rango_de_fechas(
 )
 as
 begin
-select P.Apellidos + ', ' + P.Nombres as Solicitante, B.Nombre as Banco, B.Tipo as 'Tipo de banco', 
-	   C.Fecha as 'Fecha de credito', C.Importe as 'Importe solicitado'
+select P.Apellidos + ', ' + P.Nombres Solicitante, B.Nombre Banco, B.Tipo 'Tipo de banco', 
+	   C.Fecha 'Fecha de credito', C.Importe 'Importe solicitado'
 	   from Personas P
 	   inner join Creditos C on P.DNI = C.DNI
 	   inner join Bancos B on C.IDBanco = B.ID
-	   where C.Fecha >= @fechaInicio and C.Fecha < @fechaFin
+	   where C.Fecha between @fechaInicio and @fechaFin
 	   order by C.Fecha desc
 end
 GO
