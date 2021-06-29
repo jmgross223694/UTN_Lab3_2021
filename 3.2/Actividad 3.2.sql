@@ -133,7 +133,7 @@ begin
 end
 
 /*
-delete Tareas where ID = 257 
+delete Tareas where ID = 257
 select * from Tareas where ID = 257
 */
 
