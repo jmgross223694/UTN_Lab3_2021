@@ -211,6 +211,31 @@ y la cantidad de tareas de tipo 'Testing' que haya realizado y la cantidad de ta
 'Programación' que haya realizado.
 NOTA: Se consideran tareas de tipo 'Testing' a las tareas que contengan la palabra 'Testing' en su nombre. Ídem para Programación.
 */
+select C1.Apellido + ', ' + C1.Nombre Colaborador, 
+(select 
+	case Co.Tipo
+	when 'E'
+	then 'Externo'
+	when 'I'
+	then 'Interno'
+	End as 'Tipo'
+from Colaboradores Co
+where Co.ID = C1.ID) Tipo,
+(select count(C2.IDTarea) from Colaboraciones C2
+inner join Tareas T on C2.IDTarea = T.ID
+inner join TiposTarea TT on T.IDTipo = TT.ID
+where C2.IDColaborador = C1.ID
+and
+TT.Nombre like '%Testing%') Testing,
+(select count(C2.IDTarea) from Colaboraciones C2
+inner join Tareas T on C2.IDTarea = T.ID
+inner join TiposTarea TT on T.IDTipo = TT.ID
+where C2.IDColaborador = C1.ID
+and
+TT.Nombre like '%Programación%') Programación
+from Colaboradores C1
+GO
+
 
 /*
 15
